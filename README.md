@@ -44,3 +44,12 @@ git clone https://github.com/your-username/city-pulse.git
 cd city-pulse
 pip install -r requirements.txt
 streamlit run app.py
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
