@@ -14,11 +14,31 @@ from utils.chatbot import search_google
 st.set_page_config(page_title="City Pulse", layout="wide")
 
 st.title("City Pulse 🌆")
-city = st.selectbox("Select a City", list(CITY_COORDS.keys()))
 
+search = st.text_input("Search for a city", placeholder="Type to search or leave empty to see full list below")
+st.markdown("### Or select from dropdown below")
+# Full city list (sorted)
+all_cities = sorted(CITY_COORDS.keys())
+
+# If user typed something, filter the list
+if search:
+    filtered_cities = [city for city in all_cities if search.lower() in city.lower()]
+    
+    if filtered_cities:
+        city = st.selectbox("Select cities", filtered_cities)
+    else:
+        st.warning("No matching cities found.")
+        city = None
+        
+else:
+    city = st.selectbox("Select a city", all_cities)
+
+# Use selected_city if available
 if city:
     lat = CITY_COORDS[city]["lat"]
     lon = CITY_COORDS[city]["lon"]
+    st.success(f"Showing results for {city}")
+
 
     # --- Initialize chat history in session state ---
     if "messages" not in st.session_state:
@@ -118,26 +138,33 @@ if city:
 
     # --- Chatbot Tab ---
    
-with tabs[5]:
-    st.header("🤖 Search CityBot")
+    with tabs[5]:
+        st.header("🤖 Search CityBot")
 
+        if "search_history" not in st.session_state:
+            st.session_state.search_history = []
+
+        user_input = st.chat_input("Ask a question (e.g., top cafes, weekend events)")
+
+        if user_input:
+            st.session_state.search_history.append({"role": "user", "text": user_input})
+
+            with st.spinner("Searching Google..."):
+                answer = search_google(user_input)
+
+            st.session_state.search_history.append({"role": "bot", "text": answer})
+
+  
+
+    # Display chat messages
     if "search_history" not in st.session_state:
         st.session_state.search_history = []
 
-    user_input = st.chat_input("Ask a question (e.g., top cafes, weekend events)")
-
-    if user_input:
-        st.session_state.search_history.append({"role": "user", "text": user_input})
-
-        with st.spinner("Searching Google..."):
-            answer = search_google(user_input)
-
-        st.session_state.search_history.append({"role": "bot", "text": answer})
-
-    # Display chat messages
     for msg in st.session_state.search_history:
         if msg["role"] == "user":
             st.chat_message("user").markdown(msg["text"])
         else:
             st.chat_message("assistant").markdown(msg["text"])
+else:
+    st.info("Please select a valid city to see the information.")
 
