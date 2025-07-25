@@ -19,6 +19,7 @@ def get_current_weather(city_name, lat, lon):
         "temperature": data["main"]["temp"],
         "feels_like": data["main"]["feels_like"],
         "humidity": data["main"]["humidity"],
+        "wind_speed": data["wind"]["speed"],
         "description": data["weather"][0]["description"].title(),
         "icon": data["weather"][0]["icon"]
     }
