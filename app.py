@@ -34,10 +34,12 @@ if city:
         if "error" in weather:
             st.error(weather["error"])
         else:
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3,col4 = st.columns(4)
             col1.metric("Temperature (°C)", weather["temperature"])
             col2.metric("Feels Like (°C)", weather["feels_like"])
             col3.metric("Humidity (%)", weather["humidity"])
+            #Added a factor wind speed and coverted m/s to km/hr
+            col4.metric("Wind Speed (km/hr)", round(weather["wind_speed"]*3.6, 2))
             st.write(f"**Description:** {weather['description'].capitalize()}")
             st.image(f"http://openweathermap.org/img/wn/{weather['icon']}@2x.png")
 
