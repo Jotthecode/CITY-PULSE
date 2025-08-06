@@ -8,3 +8,5 @@ python-dotenv
 geopy              # If you need geolocation from city names
 openai             # If you add GPT-powered suggestions
 folium             # If you add maps (like tourist locations)
+matplotlib
+

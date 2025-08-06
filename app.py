@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import datetime
 
-# Import your existing utility functions
+# Import utility functions
 from utils.weather import get_current_weather, get_monthly_weather
 from utils.tourist import get_recommendations
-from config import CITY_COORDS
-from utils.air_quality import get_air_quality
+from utils.air_quality import get_air_quality, describe_aqi, create_air_quality_charts
 from utils.crime import get_crime_news
 from utils.chatbot import search_google
+from config import CITY_COORDS
 
-
+# Page configuration
 st.set_page_config(page_title="City Pulse", layout="wide")
 
 st.title("City Pulse 🌆")
@@ -20,14 +20,22 @@ if city:
     lat = CITY_COORDS[city]["lat"]
     lon = CITY_COORDS[city]["lon"]
 
-    # --- Initialize chat history in session state ---
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Create tabs
-    tabs = st.tabs(["Weather", "Air Quality", "Tourist Info", "Crime News", "Trends", "Find with City Pulse"]) 
+    if "search_history" not in st.session_state:
+        st.session_state.search_history = []
 
-    # --- Existing Tabs (No changes needed for these sections) ---
+    tabs = st.tabs([
+        "🌦 Weather", 
+        "🫁 Air Quality", 
+        "🏖 Tourist Info", 
+        "🚨 Crime News", 
+        "📊 Trends", 
+        "🤖 CityBot"
+    ]) 
+
+    # --- Weather Tab ---
     with tabs[0]:
         st.header(f"Current Weather in {city}")
         weather = get_current_weather(city, lat, lon)
@@ -53,19 +61,29 @@ if city:
             })
             st.dataframe(df_monthly)
 
+    # --- Air Quality Tab ---
     with tabs[1]:
         st.header(f"Air Quality in {city}")
-        air_quality = get_air_quality(city)
+
+        with st.spinner("Fetching air quality data..."):
+            air_quality = get_air_quality(city)
+
         if "error" in air_quality:
             st.error(air_quality["error"])
         else:
-            aqi_level = {1: "Good", 2: "Fair", 3: "Moderate", 4: "Poor", 5: "Very Poor"}
-            st.markdown(f"### AQI Level: {air_quality['aqi']} - **{aqi_level.get(air_quality['aqi'], 'Unknown')}**")
-            with st.expander("Pollutant Details (μg/m³)"):
-                comp_df = pd.DataFrame(list(air_quality["components"].items()), columns=["Pollutant", "Value"])
-                comp_df["Pollutant"] = comp_df["Pollutant"].str.upper()
+            st.markdown(f"### AQI Level: {air_quality['aqi']} - **{describe_aqi(air_quality['aqi'])}**")
+
+            components = air_quality["components"]
+            comp_df = pd.DataFrame(list(components.items()), columns=["Pollutant", "Value"])
+            comp_df["Pollutant"] = comp_df["Pollutant"].str.upper()
+
+            with st.expander("Pollutant Details Table (μg/m³)"):
                 st.table(comp_df)
 
+            # Visualizations
+            create_air_quality_charts(comp_df)
+
+    # --- Tourist Info Tab ---
     with tabs[2]:
         st.header(f"Tourist Recommendations in {city}")
         tourist_data = get_recommendations(city)
@@ -84,6 +102,7 @@ if city:
             else:
                 st.info("No tourist places data available or could not be fetched.")
 
+    # --- Crime News Tab ---
     with tabs[3]:
         st.header(f"Recent Crime News in {city}")
         crime_news = get_crime_news(city)
@@ -100,6 +119,7 @@ if city:
             else:
                 st.info("No crime news found.")
 
+    # --- Trends Tab ---
     with tabs[4]:
         st.header("How Popular is Your City? 📈")
         trends = tourist_data.get("trends", [])
@@ -115,29 +135,21 @@ if city:
             else:
                 st.info("No trends data available.")
 
+    # --- CityBot Chat Tab ---
+    with tabs[5]:
+        st.header("🤖 Search CityBot")
+        user_input = st.chat_input("Ask a question (e.g., top cafes, weekend events)")
 
-    # --- Chatbot Tab ---
-   
-with tabs[5]:
-    st.header("🤖 Search CityBot")
+        if user_input:
+            st.session_state.search_history.append({"role": "user", "text": user_input})
 
-    if "search_history" not in st.session_state:
-        st.session_state.search_history = []
+            with st.spinner("Searching Google..."):
+                answer = search_google(user_input)
 
-    user_input = st.chat_input("Ask a question (e.g., top cafes, weekend events)")
+            st.session_state.search_history.append({"role": "bot", "text": answer})
 
-    if user_input:
-        st.session_state.search_history.append({"role": "user", "text": user_input})
-
-        with st.spinner("Searching Google..."):
-            answer = search_google(user_input)
-
-        st.session_state.search_history.append({"role": "bot", "text": answer})
-
-    # Display chat messages
-    for msg in st.session_state.search_history:
-        if msg["role"] == "user":
-            st.chat_message("user").markdown(msg["text"])
-        else:
-            st.chat_message("assistant").markdown(msg["text"])
-
+        for msg in st.session_state.search_history:
+            if msg["role"] == "user":
+                st.chat_message("user").markdown(msg["text"])
+            else:
+                st.chat_message("assistant").markdown(msg["text"])
