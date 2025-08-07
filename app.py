@@ -19,18 +19,34 @@ if city_query:
     matched_cities = search_cities(city_query)
 
     if matched_cities:
-        city_labels = [c['label'] for c in matched_cities]
-        selected_label = st.selectbox("Select a city from matches:", city_labels)
-        selected_city = next(c for c in matched_cities if c['label'] == selected_label)
-        city = selected_label
-        lat, lon = selected_city["lat"], selected_city["lon"]
+        city_labels = ["-- Select a city --"]+[c['label']
+                                               for c in matched_cities]
+        selected_label = st.selectbox(
+            "Select a city from matches:", city_labels)
 
-        st.success(f"📍 You selected: {selected_label} — Lat: {lat}, Lon: {lon}")
+        if selected_label == "-- Select a city --":
+            st.info("👋 Please select a city to view data.")
+            st.stop()
+
+        selected_city = next(
+            (c for c in matched_cities if c['label'].strip(
+            ).lower() == selected_label.strip().lower()), None
+        )
+
+        if selected_city is None:
+            st.warning("Selected city is not found in matched results.")
+            st.stop()
+
+        city = selected_city['label']
+        lat, lon = selected_city["lat"], selected_city["lon"]
+        st.success(
+            f"📍 You selected: {city} — Lat: {lat}, Lon: {lon}")
 
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        tabs = st.tabs(["Weather", "Air Quality", "Tourist Info", "Crime News", "Trends", "Find with City Pulse"])
+        tabs = st.tabs(["Weather", "Air Quality", "Tourist Info",
+                       "Crime News", "Trends", "Find with City Pulse"])
 
         with tabs[0]:
             st.header(f"Current Weather in {city}")
@@ -42,8 +58,10 @@ if city_query:
                 col1.metric("Temperature (°C)", weather["temperature"])
                 col2.metric("Feels Like (°C)", weather["feels_like"])
                 col3.metric("Humidity (%)", weather["humidity"])
-                st.write(f"**Description:** {weather['description'].capitalize()}")
-                st.image(f"http://openweathermap.org/img/wn/{weather['icon']}@2x.png")
+                st.write(
+                    f"**Description:** {weather['description'].capitalize()}")
+                st.image(
+                    f"http://openweathermap.org/img/wn/{weather['icon']}@2x.png")
 
             monthly_weather = get_monthly_weather(city)
             if isinstance(monthly_weather, list) and monthly_weather:
@@ -63,10 +81,13 @@ if city_query:
             if "error" in air_quality:
                 st.error(air_quality["error"])
             else:
-                aqi_level = {1: "Good", 2: "Fair", 3: "Moderate", 4: "Poor", 5: "Very Poor"}
-                st.markdown(f"### AQI Level: {air_quality['aqi']} - **{aqi_level.get(air_quality['aqi'], 'Unknown')}**")
+                aqi_level = {1: "Good", 2: "Fair",
+                             3: "Moderate", 4: "Poor", 5: "Very Poor"}
+                st.markdown(
+                    f"### AQI Level: {air_quality['aqi']} - **{aqi_level.get(air_quality['aqi'], 'Unknown')}**")
                 with st.expander("Pollutant Details (μg/m³)"):
-                    comp_df = pd.DataFrame(list(air_quality["components"].items()), columns=["Pollutant", "Value"])
+                    comp_df = pd.DataFrame(list(air_quality["components"].items()), columns=[
+                                           "Pollutant", "Value"])
                     comp_df["Pollutant"] = comp_df["Pollutant"].str.upper()
                     st.table(comp_df)
 
@@ -84,9 +105,11 @@ if city_query:
                         st.markdown("---")
             else:
                 if places and places[0].get("error"):
-                    st.error(f"Error fetching tourist places: {places[0]['error']}")
+                    st.error(
+                        f"Error fetching tourist places: {places[0]['error']}")
                 else:
-                    st.info("No tourist places data available or could not be fetched.")
+                    st.info(
+                        "No tourist places data available or could not be fetched.")
 
         with tabs[3]:
             st.header(f"Recent Crime News in {city}")
@@ -110,7 +133,8 @@ if city_query:
             if trends and not trends[0].get("error"):
                 dates = [trend["date"] for trend in trends]
                 interests = [trend["interest"] for trend in trends]
-                df_trends = pd.DataFrame({"Date": pd.to_datetime(dates), "Interest": interests})
+                df_trends = pd.DataFrame(
+                    {"Date": pd.to_datetime(dates), "Interest": interests})
                 df_trends = df_trends.set_index("Date")
                 st.line_chart(df_trends)
             else:
@@ -125,13 +149,16 @@ if city_query:
             if "search_history" not in st.session_state:
                 st.session_state.search_history = []
 
-            user_input = st.chat_input("Ask a question (e.g., top cafes, weekend events)")
+            user_input = st.chat_input(
+                "Ask a question (e.g., top cafes, weekend events)")
 
             if user_input:
-                st.session_state.search_history.append({"role": "user", "text": user_input})
+                st.session_state.search_history.append(
+                    {"role": "user", "text": user_input})
                 with st.spinner("Searching Google..."):
                     answer = search_google(user_input)
-                st.session_state.search_history.append({"role": "bot", "text": answer})
+                st.session_state.search_history.append(
+                    {"role": "bot", "text": answer})
 
             for msg in st.session_state.search_history:
                 if msg["role"] == "user":
