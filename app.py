@@ -8,6 +8,7 @@ from utils.tourist import get_recommendations
 from utils.city_api import search_cities
 from utils.air_quality import get_air_quality
 from utils.crime import get_crime_news
+from utils.emergency import get_osm_places
 from utils.chatbot import search_google
 
 st.set_page_config(page_title="City Pulse", layout="wide")
@@ -30,7 +31,7 @@ if city_query:
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        tabs = st.tabs(["Weather", "Air Quality", "Tourist Info", "Crime News", "Trends", "Find with City Pulse"])
+        tabs = st.tabs(["Weather", "Air Quality", "Tourist Info", "Crime News","Emergency Services","Trends", "Find with City Pulse"])
 
         with tabs[0]:
             st.header(f"Current Weather in {city}")
@@ -105,6 +106,38 @@ if city_query:
                     st.info("No crime news found.")
 
         with tabs[4]:
+            st.header("🚨 Find Emergency Services Near You")
+
+            if city and lat and lon:
+                st.subheader(f"City: {city}")
+
+                st.subheader("🏥 Hospitals")
+                hospitals = get_osm_places("hospital", lat, lon)
+                if hospitals:
+                   for h in hospitals:
+                        st.markdown(f"- {h['display_name']} ([📍Map](https://www.google.com/maps?q={h['lat']},{h['lon']}))")
+                else:
+                    st.info("No hospitals found nearby.")
+
+                st.subheader("🚓 Police Stations")
+                police = get_osm_places("police station", lat, lon)
+                if police:
+                    for p in police:
+                        st.markdown(f"- {p['display_name']} ([📍Map](https://www.google.com/maps?q={p['lat']},{p['lon']}))")
+                else:
+                    st.info("No police stations found nearby.")
+
+                st.subheader("🚒 Fire Stations")
+                fire = get_osm_places("fire station", lat, lon)
+                if fire:
+                    for f in fire:
+                        st.markdown(f"- {f['display_name']} ([📍Map](https://www.google.com/maps?q={f['lat']},{f['lon']}))")
+                else:
+                    st.info("No fire stations found nearby.")
+            else:
+                st.warning("Please select a city in the search box above.")            
+
+        with tabs[5]:
             st.header("How Popular is Your City? 📈")
             trends = tourist_data.get("trends", [])
             if trends and not trends[0].get("error"):
@@ -119,7 +152,7 @@ if city_query:
                 else:
                     st.info("No trends data available.")
 
-        with tabs[5]:
+        with tabs[6]:
             st.header("🤖 Search CityBot")
 
             if "search_history" not in st.session_state:
