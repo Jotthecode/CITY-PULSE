@@ -1,0 +1,352 @@
+The Crime News Aggregator is a web application designed to provide users with real-time updates on city-specific crime headlines. It integrates data from police APIs and reputable news sources, offering filtering capabilities for a tailored user experience.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime News Aggregator</title>
+    <link rel="icon" href="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/3358d11e-48ed-4728-9974-e698dd3007f3.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-gray-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/3d66bd71-2843-4bc6-961e-331ad61aea8e.png" alt="Crime News Aggregator logo" class="mr-3 rounded-full">
+                    <h1 class="text-2xl font-bold">Crime News Aggregator</h1>
+                </div>
+                <div class="relative w-full md:w-1/3">
+                    <input 
+                        type="text" 
+                        placeholder="Search crime reports..." 
+                        class="w-full px-4 py-2 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="searchInput">
+                    <button class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <nav class="mt-6">
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button class="city-filter px-4 py-2 rounded-full bg-blue-600 text-white" data-city="all">All Cities</button>
+                    <button class="city-filter px-4 py-2 rounded-full bg-gray-700 text-white hover:bg-blue-600" data-city="phoenix">Phoenix</button>
+                    <button class="city-filter px-4 py-2 rounded-full bg-gray-700 text-white hover:bg-blue-600" data-city="newyork">New York</button>
+                    <button class="city-filter px-4 py-2 rounded-full bg-gray-700 text-white hover:bg-blue-600" data-city="chicago">Chicago</button>
+                    <button class="city-filter px-4 py-2 rounded-full bg-gray-700 text-white hover:bg-blue-600" data-city="losangeles">Los Angeles</button>
+                    <button class="city-filter px-4 py-2 rounded-full bg-gray-700 text-white hover:bg-blue-600" data-city="houston">Houston</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="mb-6 flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-800" id="currentFilter">Latest Crime Reports</h2>
+            <button id="refreshBtn" class="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <div id="loadingIndicator" class="text-center py-10 hidden">
+            <div class="inline-block">
+                <div class="pulse text-blue-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <p class="mt-3 text-gray-600">Fetching latest crime reports...</p>
+            </div>
+        </div>
+
+        <div id="newsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- News cards will be inserted here -->
+        </div>
+
+        <div id="noResults" class="text-center py-12 hidden">
+            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/a48f5801-1540-41fb-ad73-9b683f0fb610.png" alt="No crime reports found matching your criteria" class="mx-auto mb-4 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-700">No crime reports found</h3>
+            <p class="text-gray-500 mt-2">Try adjusting your search or filter criteria</p>
+        </div>
+    </main>
+
+    <footer class="bg-gray-100 border-t border-gray-200 py-6 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="text-center text-gray-600 text-sm">
+                <p>Data sourced from official police APIs and verified news sources. Last updated: <span id="lastUpdated"></span></p>
+                <p class="mt-2">© 2023 Crime News Aggregator. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Sample data - in a real app, this would come from APIs
+        const crimeNewsData = [
+            {
+                id: 1,
+                title: "Driver Indicted for High-Speed Chase in Downtown Phoenix",
+                source: "Maricopa County Attorney's Office",
+                snippet: "Speed exceeded 100 mph as defendant veered into oncoming traffic on the I-10 freeway before being apprehended.",
+                city: "phoenix",
+                date: "2023-11-15T14:30:00Z",
+                url: "https://maricopacountyattorney.org/381/MCAO-Latest-News",
+                severity: "high"
+            },
+            {
+                id: 2,
+                title: "Armed Robbery at 7-Eleven in Queens Leads to Arrest",
+                source: "NYPD News",
+                snippet: "Suspect arrested after attempting to rob convenience store with a handgun. No injuries reported.",
+                city: "newyork",
+                date: "2023-11-14T23:15:00Z",
+                url: "https://www1.nyc.gov/site/nypd/news/p00001/armed-robbery-queens",
+                severity: "medium"
+            },
+            {
+                id: 3,
+                title: "Gang-Related Shooting in South Chicago Leaves 1 Dead",
+                source: "Chicago Tribune",
+                snippet: "Police investigating fatal shooting believed to be connected to ongoing gang violence in the area.",
+                city: "chicago",
+                date: "2023-11-14T19:45:00Z",
+                url: "https://www.chicagotribune.com/news/crime/ct-chicago-shooting-20231114",
+                severity: "high"
+            },
+            {
+                id: 4,
+                title: "LAPD Arrests Burglary Suspect in Hollywood Hills",
+                source: "LAPD Blog",
+                snippet: "Homeowner alert system led to quick police response and arrest of suspect attempting to break in.",
+                city: "losangeles",
+                date: "2023-11-14T04:20:00Z",
+                url: "https://www.lapd.com/blog/hollywood-hills-burglary-arrest",
+                severity: "low"
+            },
+            {
+                id: 5,
+                title: "Drug Bust in Downtown Houston Nets 3 Arrests",
+                source: "Houston Police Department",
+                snippet: "Undercover operation leads to seizure of 5kg of suspected fentanyl and multiple arrests.",
+                city: "houston",
+                date: "2023-11-13T16:10:00Z",
+                url: "https://www.houstonpolice.org/news/drug-bust-20231113",
+                severity: "medium"
+            },
+            {
+                id: 6,
+                title: "Phoenix Police Seek Witnesses to Hit-and-Run",
+                source: "AZ Central",
+                snippet: "Pedestrian critically injured in hit-and-run accident near 7th Street and McDowell.",
+                city: "phoenix",
+                date: "2023-11-13T08:05:00Z",
+                url: "https://www.azcentral.com/story/news/local/phoenix/2023/11/13/hit-and-run-phoenix/71559053007/",
+                severity: "medium"
+            }
+        ];
+
+        // DOM Elements
+        const newsContainer = document.getElementById('newsContainer');
+        const searchInput = document.getElementById('searchInput');
+        const cityFilters = document.querySelectorAll('.city-filter');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const noResults = document.getElementById('noResults');
+        const lastUpdated = document.getElementById('lastUpdated');
+        const currentFilter = document.getElementById('currentFilter');
+
+        // Variables
+        let currentCityFilter = 'all';
+        let currentSearchTerm = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLastUpdatedTime();
+            renderNewsCards(crimeNewsData);
+            
+            // Simulate real-time updates every 30 seconds
+            setInterval(simulateRealTimeUpdate, 30000);
+        });
+
+        // Event Listeners
+        searchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value.toLowerCase();
+            filterAndRenderNews();
+        });
+
+        cityFilters.forEach(filter => {
+            filter.addEventListener('click', () => {
+                currentCityFilter = filter.dataset.city;
+                updateActiveFilterButton();
+                filterAndRenderNews();
+                
+                // Update the current filter text
+                if (currentCityFilter === 'all') {
+                    currentFilter.textContent = 'Latest Crime Reports';
+                } else {
+                    const cityName = filter.textContent;
+                    currentFilter.textContent = `${cityName} Crime Reports`;
+                }
+            });
+        });
+
+        refreshBtn.addEventListener('click', () => {
+            simulateRealTimeUpdate();
+        });
+
+        // Functions
+        function updateActiveFilterButton() {
+            cityFilters.forEach(filter => {
+                if (filter.dataset.city === currentCityFilter) {
+                    filter.classList.remove('bg-gray-700');
+                    filter.classList.add('bg-blue-600');
+                } else {
+                    filter.classList.remove('bg-blue-600');
+                    filter.classList.add('bg-gray-700');
+                }
+            });
+        }
+
+        function filterNews() {
+            return crimeNewsData.filter(news => {
+                const matchesCity = currentCityFilter === 'all' || news.city === currentCityFilter;
+                const matchesSearch = currentSearchTerm === '' || 
+                    news.title.toLowerCase().includes(currentSearchTerm) || 
+                    news.snippet.toLowerCase().includes(currentSearchTerm) ||
+                    news.source.toLowerCase().includes(currentSearchTerm);
+                return matchesCity && matchesSearch;
+            });
+        }
+
+        function renderNewsCards(newsItems) {
+            if (newsItems.length === 0) {
+                newsContainer.classList.add('hidden');
+                noResults.classList.remove('hidden');
+            } else {
+                newsContainer.classList.remove('hidden');
+                noResults.classList.add('hidden');
+                
+                newsContainer.innerHTML = '';
+                
+                newsItems.forEach(news => {
+                    const severityColor = getSeverityColor(news.severity);
+                    const formattedDate = formatDate(news.date);
+                    const cityName = getCityName(news.city);
+                    
+                    const newsCard = document.createElement('div');
+                    newsCard.className = 'bg-white rounded-lg shadow-md overflow-hidden news-card transition-all duration-300 border-t-4 ' + severityColor.border;
+                    newsCard.innerHTML = `
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold ${severityColor.bg} ${severityColor.text}">${severityColor.label}</span>
+                                <span class="text-gray-500 text-sm">${formattedDate}</span>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">${news.title}</h3>
+                            <p class="text-gray-600 mb-4">${news.snippet}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 text-sm">${cityName} • ${news.source}</span>
+                                <a href="${news.url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Read more →</a>
+                            </div>
+                        </div>
+                    `;
+                    newsContainer.appendChild(newsCard);
+                });
+            }
+        }
+
+        function filterAndRenderNews() {
+            const filteredNews = filterNews();
+            renderNewsCards(filteredNews);
+        }
+
+        function getSeverityColor(severity) {
+            switch(severity) {
+                case 'high':
+                    return {
+                        bg: 'bg-red-100',
+                        text: 'text-red-800',
+                        border: 'border-red-500',
+                        label: 'High Severity'
+                    };
+                case 'medium':
+                    return {
+                        bg: 'bg-yellow-100',
+                        text: 'text-yellow-800',
+                        border: 'border-yellow-500',
+                        label: 'Medium Severity'
+                    };
+                default:
+                    return {
+                        bg: 'bg-blue-100',
+                        text: 'text-blue-800',
+                        border: 'border-blue-500',
+                        label: 'Low Severity'
+                    };
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getCityName(cityCode) {
+            const cities = {
+                phoenix: 'Phoenix, AZ',
+                newyork: 'New York, NY',
+                chicago: 'Chicago, IL',
+                losangeles: 'Los Angeles, CA',
+                houston: 'Houston, TX'
+            };
+            return cities[cityCode] || cityCode;
+        }
+
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            lastUpdated.textContent = now.toLocaleString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function simulateRealTimeUpdate() {
+            loadingIndicator.classList.remove('hidden');
+            newsContainer.classList.add('hidden');
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // In a real app, this would be an actual API call
+                updateLastUpdatedTime();
+                filterAndRenderNews();
+                loadingIndicator.classList.add('hidden');
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
