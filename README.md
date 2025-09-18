@@ -37,10 +37,51 @@ City Pulse is a sleek, real-time dashboard built with **Streamlit** that provide
 
 ---
 
-## 📦 Installation
+## 📦 Installation & Setup
 
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/city-pulse.git
-cd city-pulse
+git clone https://github.com/your-username/CITY-PULSE.git
+cd CITY-PULSE
+```
+
+### 2. Install Dependencies
+```bash
 pip install -r requirements.txt
+```
+
+### 3. Set Up Environment Variables
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit the `.env` file and add your API keys:
+   ```bash
+   # Required API Keys
+   OPENWEATHER_API_KEY=your_openweathermap_api_key_here
+   VISUALCROSSING_API_KEY=your_visualcrossing_api_key_here
+   NEWS_API_KEY=your_news_api_key_here
+   GOOGLE_API_KEY=your_google_api_key_here
+   CSE_ID=your_custom_search_engine_id_here
+   ```
+
+### 4. Get Your API Keys
+- **OpenWeatherMap API**: [Get free API key](https://openweathermap.org/api)
+- **Visual Crossing API**: [Get free API key](https://www.visualcrossing.com/weather-api)
+- **News API**: [Get free API key](https://newsapi.org/)
+- **Google Custom Search API**: [Get API key](https://developers.google.com/custom-search/v1/introduction)
+- **Custom Search Engine**: [Create CSE](https://cse.google.com/)
+
+### 5. Run the Application
+```bash
 streamlit run app.py
+```
+
+---
+
+## 🚨 Security Notice
+
+This application requires API keys to function properly. **Never commit your `.env` file or expose your API keys publicly**. The `.env` file is already included in `.gitignore` to prevent accidental commits.
+
+---
