@@ -1,10 +1,20 @@
 # utils/chatbot.py
 
 import requests
+import os
+from dotenv import load_dotenv
 
-# Replace these with env variables or config if you want
-GOOGLE_API_KEY = "AIzaSyAIQcBW-1Wmx4Z8vuvyibvrum9dS0HgheI"
-CSE_ID = "41a7d2bcb1d014824"
+load_dotenv()
+
+# Load API keys from environment variables
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+CSE_ID = os.getenv("CSE_ID")
+
+# Validate that required environment variables are set
+if not GOOGLE_API_KEY:
+    raise ValueError("Missing required environment variable: GOOGLE_API_KEY")
+if not CSE_ID:
+    raise ValueError("Missing required environment variable: CSE_ID")
 
 def search_google(query):
     try:
